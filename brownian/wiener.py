@@ -18,7 +18,7 @@ def w_series(n, dt, t_init=0, w_init=0.0):
     w_series = dw.cumsum()
     return t_series, w_series
 
-def incr_res(T, W, c, mu=0, sigma=1):
+def raise_res(T, W, c, mu=0, sigma=1):
     '''Increase the resolution of a wiener series by a factor of c.
         
         Returns a more reolved Wiener series and its associate time series
