@@ -4,7 +4,7 @@ from numpy import exp
 from numpy import log
 from random import gauss
 
-def expmo_estep(n, dt, a, b, c, m=1, mu=0, sigma=1, w_init=0., p_init=1., chain=(0,1)):
+def estep(n, dt, a, b, c, m=1, mu=0, sigma=1, w_init=0., p_init=1., chain=(0,1)):
     '''Moves a price series forward through n time steps using Euler's method.
     
     Details
@@ -51,7 +51,7 @@ def expmo_estep(n, dt, a, b, c, m=1, mu=0, sigma=1, w_init=0., p_init=1., chain=
         p_series.append(p_t)
     return t_series,w_series,p_series
 
-def expmo_astep(n, dt, a, b, c, mu=0, sigma=1, w_init=0., p_init=1., chain_length=0):
+def astep(n, dt, a, b, c, mu=0, sigma=1, w_init=0., p_init=1., chain_length=0):
     '''Moves a price series forward through n time steps using an analytical method.
     
     Details
@@ -96,12 +96,12 @@ def expmo_astep(n, dt, a, b, c, mu=0, sigma=1, w_init=0., p_init=1., chain_lengt
         w_series.append(w_t)
     return t_series,w_series,p_series
 
-def expmo_etrace(series, x, y_init, dt, a, b, c, m=1, mu=0, sigma=1, y_last=None, chain=False):
+def etrace(series, x, y_init, dt, a, b, c, m=1, mu=0, sigma=1, y_last=None, chain=False):
     """Returns a price/wiener series by tracing over a wiener/price series.
     
     series = 'wiener'
     -----------------
-    Traces a wiener series with Euler's method to make a price series.
+    Traces a wiener series with Euler's method to make an expmo type price series.
     x = The retraced wiener series.
     y_init = Initial value of the price series.
     
@@ -161,12 +161,12 @@ def expmo_etrace(series, x, y_init, dt, a, b, c, m=1, mu=0, sigma=1, y_last=None
             w_series.append(w_t)
         return w_series
 
-def expmo_atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
+def atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
     """Returns a price/wiener series by tracing over a wiener/price series.
     
     series = 'wiener'
     -----------------
-    Analyticaly traces a wiener series to make a price series.
+    Analyticaly traces a wiener series to make an expmo type price series.
     x = a wiener series.
     
     series = 'price':
