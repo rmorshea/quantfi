@@ -1,19 +1,17 @@
-from numpy import arange
-from numpy.random import normal
-from numpy import sqrt
-from numpy import exp
-from numpy import pi
+import numpy as np
+from math import erfc
 from random import random
 from random import gauss
 
 def w_series(n, dt, t_init=0, w_init=0.0):
     """Returns one realization of a Wiener process with n steps of length dt.
-    The time and Wiener series can be initialized using t_init and w_init respectively."""
+    The time and Wiener series can be initialized using t_init and w_init respectively.
+    """
     n+=1
-    t_series = arange(t_init,n*dt,dt)
+    t_series = np.arange(t_init,(n-0.1)*dt,dt)
     h = t_series[1]-t_series[0]
-    z = normal(0.0,1.0,n)
-    dw = sqrt(h)*z
+    z = np.normal(0.0,1.0,n)
+    dw = np.sqrt(h)*z
     dw[0] = w_init
     w_series = dw.cumsum()
     return t_series, w_series
@@ -28,7 +26,7 @@ def raise_res(T, W, c, mu=0, sigma=1):
         c = Scaling factor (integer greater than 1).
         mu = Mean of W's underlying normal distribution.
         sigma = Standard deviation of W's underlying normal distribution.
-        '''
+    '''
     dT = T[1]-T[0]
     dt = float(T[1]-T[0])/c
     t_series = []
@@ -43,12 +41,11 @@ def raise_res(T, W, c, mu=0, sigma=1):
         for j in range(c-1):
             t+=dt
             dW = (w_next-w_t)
-            sig = sqrt(t_next-t)*sigma
-            my_gauss = exp(-dW**2/2/sig**2)/sqrt(2*pi)/sig
-            if my_gauss<random()<(1-(t_next-t)/dT):
-                w_t+=abs(gauss(0,sqrt(dt)*sigma))*float(dW)/abs(dW)
+            drawfrm_cum = np.sqrt(2)*np.sqrt(t_next-t)*sigma*erfc(random())
+            if np.sqrt(2)*np.sqrt(t_next-t)*sigma*erfc(-2*random())<abs(dW):
+                w_t+=abs(gauss(0,np.sqrt(dt)*sigma))*float(dW)/abs(dW)
             else:
-                w_t+=gauss(0,sqrt(dt)*sigma)
+                w_t+=gauss(0,np.sqrt(dt)*sigma)
             t_series.append(t)
             w_series.append(w_t)
     t_series.append(T[-1])
