@@ -1,7 +1,4 @@
-from numpy import arange
-from numpy import sqrt
-from numpy import exp
-from numpy import log
+import numpy as np
 from random import gauss
 
 def estep(n, dt, a, b, c, m=1, mu=0, sigma=1, w_init=0., p_init=1., chain=(0,1)):
@@ -33,15 +30,15 @@ def estep(n, dt, a, b, c, m=1, mu=0, sigma=1, w_init=0., p_init=1., chain=(0,1))
     p_t = p_init
     p_last = p_init
     if chain[0]>0:
-        t_series = arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
+        t_series = np.arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
         w_series = []
         p_series = []
     else:
-        t_series = arange(0,(n+0.1)*dt,dt)
+        t_series = np.arange(0,(n+0.1)*dt,dt)
         w_series = [w_init]
         p_series = [p_init]
     for i in range(n):
-        dw = gauss(mu,sqrt(dt)*sigma)
+        dw = gauss(mu,np.sqrt(dt)*sigma)
         dp = (p_t-p_last)/p_last
         p_last = p_t
         #incrament p(t) and w(t), then append values
@@ -80,19 +77,19 @@ def astep(n, dt, a, b, c, mu=0, sigma=1, w_init=0., p_init=1., chain_length=0):
     w_t = w_init
     p_t = p_init
     if chain_length>0:
-        t_series = arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
+        t_series = np.arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
         w_series = []
         p_series = []
         trim = 0
     else:
-        t_series = arange(0,(n+0.1)*dt,dt)
+        t_series = np.arange(0,(n+0.1)*dt,dt)
         w_series = [float(w_init)]
         p_series = [float(p_init)]
         trim = 1
     for t in t_series[trim:]:
-        nu = gauss(mu,sqrt(dt)*sigma)
+        nu = gauss(mu,np.sqrt(dt)*sigma)
         w_t += nu
-        p_series.append(p_init*exp(((a-b**2/2./(1-c*dt))*t+b*w_t)/(1-c*dt)))
+        p_series.append(p_init*np.exp(((a-b**2/2./(1-c*dt))*t+b*w_t)/(1-c*dt)))
         w_series.append(w_t)
     return t_series,w_series,p_series
 
@@ -196,7 +193,7 @@ def atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
         else:
             i = 0
         for t in [dt*j for j in range(i,len(w_series))]:
-            p_series.append(p_init*exp(((a-b**2/2./(1-c*dt))*t+b*w_series[i])/(1-c*dt)))
+            p_series.append(p_init*np.exp(((a-b**2/2./(1-c*dt))*t+b*w_series[i])/(1-c*dt)))
             i+=1
         return p_series
 
@@ -206,6 +203,6 @@ def atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
         i = 1
         mu0 = 0
         for t in [dt*j for j in range(1,len(p_series))]:
-            w_series.append((log(p_series[i]/p_init)*(1-c*dt)-(a-b**2/2./(1-c*dt))*t)/b)
+            w_series.append((np.log(p_series[i]/p_init)*(1-c*dt)-(a-b**2/2./(1-c*dt))*t)/b)
             i+=1
         return w_series

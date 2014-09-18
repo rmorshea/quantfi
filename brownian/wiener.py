@@ -10,7 +10,7 @@ def w_series(n, dt, t_init=0, w_init=0.0):
     n+=1
     t_series = np.arange(t_init,(n-0.1)*dt,dt)
     h = t_series[1]-t_series[0]
-    z = np.normal(0.0,1.0,n)
+    z = np.random.normal(0.0,1.0,n)
     dw = np.sqrt(h)*z
     dw[0] = w_init
     w_series = dw.cumsum()

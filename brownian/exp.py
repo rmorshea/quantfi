@@ -1,7 +1,4 @@
-from numpy import arange
-from numpy import sqrt
-from numpy import exp
-from numpy import log
+import numpy as np
 from random import gauss
 
 def estep(n, dt, a, b, m=1, mu=0, sigma=1, w_init=0, p_init=1, chain_length=0):
@@ -32,15 +29,15 @@ def estep(n, dt, a, b, m=1, mu=0, sigma=1, w_init=0, p_init=1, chain_length=0):
     w_t = w_init
     p_t = p_init
     if chain_length>0:
-        t_series = arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
+        t_series = np.arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
         w_series = []
         p_series = []
     else:
-        t_series = arange(0,(n+0.1)*dt,dt)
+        t_series = np.arange(0,(n+0.1)*dt,dt)
         w_series = [w_init]
         p_series = [p_init]
     for i in range(n):
-        dw = gauss(mu,sqrt(dt)*sigma)
+        dw = gauss(mu,np.sqrt(dt)*sigma)
         # Incrament p(t) with dp as given by the DE.
         # Incrament w(t) with dw as given by the normal distribution
         p_t += (a*dt+b*dw)*p_t**(m)
@@ -78,40 +75,41 @@ def astep(n, dt, a, b, mu=0, sigma=1, w_init=0, p_init=1, chain_length=0):
     w_t = w_init
     p_t = p_init
     if chain_length>0:
-        t_series = arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
+        t_series = np.arange(chain_length*dt,(n+chain_length-0.9)*dt,dt)
         w_series = []
         p_series = []
         trim = 0
     else:
-        t_series = arange(0,(n+0.1)*dt,dt)
+        t_series = np.arange(0,(n+0.1)*dt,dt)
         w_series = [float(w_init)]
         p_series = [float(p_init)]
         trim = 1
     for t in t_series[trim:]:
-        dw = gauss(mu,sqrt(dt)*sigma)
+        dw = gauss(mu,np.sqrt(dt)*sigma)
         w_t += dw
-        p_series.append(p_init*exp((a-0.5*b**2)*t + b*w_t))
+        p_series.append(p_init*np.exp((a-0.5*b**2)*t + b*w_t))
         w_series.append(w_t)
     return t_series,w_series,p_series
 
-def etrace(series, x, y_init, dt, a, b, m=1, mu=0, sigma=1, chain=False):
+def etrace(series, ts, x, a, b, y_init, m=1, mu=0, sigma=1, chain=False):
     """Returns a price/wiener series by tracing over a wiener/price series.
     
+    ts = The corrisponding time series to x where ts[0]=0
+
     series = 'wiener'
     -----------------
     Traces a wiener series with Euler's method to make an exp type price series.
-    x = The retraced wiener series.
+    x = The wiener series being retraced.
     y_init = Initial value of the price series.
     
     series = 'price':
     -----------------
     Traces an exp type price series with Euler's method to make a wiener series.
-    x = The retraced price series.
+    x = The price series being retraced.
     y_init = Initial value of the weiner series.
     
     Parameters
     ----------
-    dt = The size of the time steps
     a = Constant controling the significance of price drift
     b = Constant controling the significance of the noise
     m = The default case refers to standard geometric brownian motion
@@ -130,6 +128,7 @@ def etrace(series, x, y_init, dt, a, b, m=1, mu=0, sigma=1, chain=False):
         else:
             p_series = [y_init]
         for i in range(1,len(w_series)):
+            dt = ts[i]-ts[i-1]
             dw = w_series[i]-w_series[i-1]
             p_t += (a*dt+b*dw)*p_t**(m)
             p_series.append(p_t)
@@ -143,14 +142,17 @@ def etrace(series, x, y_init, dt, a, b, m=1, mu=0, sigma=1, chain=False):
         else:
             w_series = [y_init]
         for i in range(1,len(p_series)):
+            dt = ts[i]-ts[i-1]
             dP = (p_series[i] - p_series[i-1])/(p_series[i-1]**(m))
             w_t+=(dP-a*dt)/b
             w_series.append(w_t)
         return w_series
     
-def atrace(series, x, dt, a, b, mu=0, sigma=1, p_init=1, chain=False):
+def atrace(series, ts, x, a, b, mu=0, sigma=1, p_init=1, chain=False):
     """Returns a price/wiener series by tracing over a wiener/price series.
     
+    ts = The corrisponding time series to x where ts[0]=0
+
     series = 'wiener'
     -----------------
     Analyticaly traces a wiener series to make an exp type price series.
@@ -163,7 +165,6 @@ def atrace(series, x, dt, a, b, mu=0, sigma=1, p_init=1, chain=False):
     
     Parameters
     ----------
-    dt = The size of the time steps.
     a = Constant controling the significance of price drift.
     b = Constant controling the significance of the noise.
     mu = Mean of the normal distribution.
@@ -182,10 +183,10 @@ def atrace(series, x, dt, a, b, mu=0, sigma=1, p_init=1, chain=False):
             i = 1
         else:
             i = 0
-        for t in [dt*j for j in range(i,len(w_series))]:
+        for t in ts:
             alph = (a-0.5*b**2)*t
             beta = b*w_series[i]
-            p_series.append(p_init*exp(alph + beta))
+            p_series.append(p_init*np.exp(alph + beta))
             i+=1
         return p_series
     
@@ -197,8 +198,8 @@ def atrace(series, x, dt, a, b, mu=0, sigma=1, p_init=1, chain=False):
             i = 1
         else:
             i = 0
-        for t in [dt*j for j in range(i,len(p_series))]:
+        for t in ts:
             alph = (a-0.5*b**2)*t
-            w_series.append((log(float(p_series[i])/p_init)-alph)/b)
+            w_series.append((np.log(float(p_series[i])/p_init)-alph)/b)
             i+=1
         return w_series
