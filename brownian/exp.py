@@ -1,5 +1,10 @@
 import numpy as np
 from random import gauss
+from utility_funcs import get_fds
+import matplotlib.pyplot as plt
+from matplotlib.mlab import normpdf
+from IPython.html.widgets import interact
+from scipy.stats import ks_2samp
 
 def estep(n, dt, a, b, m=1, mu=0, sigma=1, w_init=0, p_init=1, chain_length=0):
     '''Moves a price series forward through n time steps using Euler's method.
@@ -203,3 +208,61 @@ def atrace(series, ts, x, a, b, mu=0, sigma=1, p_init=1, chain=False):
             w_series.append((np.log(float(p_series[i])/p_init)-alph)/b)
             i+=1
         return w_series
+
+def ksplot(func,alims,blims,t_series,dat_series,*func_auxargs):
+    """Compare traced data to a normal distribution with a KS test.
+
+    Returns output of a KS test:
+    + The KS statistic
+    + The corrisponding p-value
+    
+    Returns two plots:
+    + A trace of the give data and time series
+    + A histogram of the trace's scaled fds and a fit gaussian.
+
+    Sliders are used to vary the parameters 'a' and 'b' in func.
+    
+    Arguments
+    ---------
+    func = use etrace or atrace to act on dat_series and t_series
+    alims = slider limits for the paramter 'a' in func
+    blims = slider limits for the paramter 'b' in func
+    t_series = the time series corrisponding to dat_series
+    dat_series = the data set which will be traced
+    func_auxargs = auxilary arguments for func.
+    """
+    def makeplots(a,b):
+        dat = func('price',t_series,dat_series,a,b,*func_auxargs)
+        fig, ax = plt.subplots(figsize=(10,2))
+        ax.set_title('Data After Trace')
+        ax.set_ylabel('wiener',fontsize=13)
+        ax.set_xlabel('time',fontsize=13)
+        ax.set_xlim(min(t_series),max(t_series))
+        ax.plot(t_series,dat)
+        
+        bnum = 50
+        dat_fds = np.array(get_fds(dat))
+        t_fds = np.array(get_fds(t_series))
+        dat_fds = dat_fds/t_fds
+        dat_cnt,dat_mkr = np.histogram(dat_fds,bnum)
+        norm_mkr = np.linspace(min(dat_mkr),max(dat_mkr),100)
+        norm_cnt = normpdf(norm_mkr,0,np.std(dat_fds))
+        norm_cnt = norm_cnt*max(dat_cnt)/max(norm_cnt)
+        ksstat,pval = ks_2samp(norm_cnt, dat_cnt)
+        print 'KS test using scaled fds of traced dat and a fit gaussian:'
+        print 'Statistic value =',ksstat
+        print 'Two sided p-value =',pval
+        
+        fig,ax1 = plt.subplots(figsize=(10,4))
+        ax1.set_title('Finite Difference Series Comparison')
+        ax1.set_ylabel('count',fontsize=13)
+        ax1.set_xlabel('difference',fontsize=13)
+        
+        wdth = float(max(dat_mkr)-min(dat_mkr))/bnum
+        plt.bar(dat_mkr[:-1],dat_cnt,label='traced fds (scaled by dt)',width = wdth,align='center')
+        plt.plot(norm_mkr,norm_cnt,label='fit gaussian',color='m')
+        ax1.set_xlim(min(dat_mkr)-wdth,max(dat_mkr)+wdth)
+        plt.legend(loc='best')
+        plt.show()
+
+    interact(makeplots,a=alims,b=blims)
