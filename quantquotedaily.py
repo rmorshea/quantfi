@@ -21,21 +21,19 @@ def get_file(symbol,date):
         raise IOError("File doesn't exist: %r" % file)
     return file
 
-def get_daily_data(symbol,date,ranged=False):
+def get_daily_data(symbol,date):
     """Get a Pandas DataFrame with the daily data for the symbol.
 
-    --- arguments ---
-    symbol = ticker symbol
-    date = give the date stamp(s) for the data 'YYYYmmdd' (+ ',YYYYmmdd')
-    ranged = if date gives a range of dates: True, else: False
-    
-    --- Note ---
-    If ranged is True a list of dates without data is also given."""
+    arguments
+    ---------
+    symbol = Ticker symbol
+    date = The date stamps for the data ('YYYYmmdd' or tuple for range)
+
+    *If ranged is True a list of date stamps without data is also given"""
     dateparse = lambda x: datetime.strptime(x, '%Y%m%d %H%M')
     nodat=[]
-    if ranged==True:
+    if type(date)==tuple:
         all_dat = []
-        date = date.split(',')
         enddate = date[1]
         crntdate = datetime.strptime(date[0], '%Y%m%d')
         check_end_date = datetime.strptime(date[1], '%Y%m%d')
@@ -53,21 +51,27 @@ def get_daily_data(symbol,date,ranged=False):
             crntdate += timedelta(days=1)
             stringdate = crntdate.strftime('%Y%m%d')
         final_df = pd.concat(all_dat)
-        final_df.columns = ['OPEN','HIGH','LOW','CLOSE','VOLUME','SPLITS','EARNINGS','DIVIDENDS']
+        final_df.columns = ['open','high','low','close','volume','splits','earnings','dividends']
     else:
         f = get_file(symbol,date)
         final_df = pd.read_csv(f, header=None,
                                parse_dates={'datetime':[0,1]},
                                date_parser=dateparse,
                                index_col=0)
-        final_df.columns = ['OPEN','HIGH','LOW','CLOSE','VOLUME','SPLITS','EARNINGS','DIVIDENDS']
+        final_df.columns = ['open','high','low','close','volume','splits','earnings','dividends']
     return final_df,nodat
+
+def get_tseries(dfts):
+    '''Get a list of times based on a series of Pandas TimeStamp objects
+
+    The resulting times are given in days'''
+    return [(ts-dfts[0]).total_seconds()*1.15741e-5 for ts in dfts]
 
 def calc_returns(df):
     close = df.close
     prev_close = df.close.shift(1)
-    df['r'] = (close - prev_close)/prev_close
-    df['lnr'] = np.log(close/prev_close)
+    df['returns'] = (close - prev_close)/prev_close
+    df['log returns'] = np.log(close/prev_close)
 
 _how = {'open':'first', 'high':'max', 'low':'min', 'close':'last', 'volume':'sum'}
 
