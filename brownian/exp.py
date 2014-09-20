@@ -209,7 +209,7 @@ def atrace(series, ts, x, a, b, mu=0, sigma=1, p_init=1, chain=False):
             i+=1
         return w_series
 
-def ksplot(func,alims,blims,t_series,dat_series,*func_auxargs):
+def ksplot(func,alims,blims,t_series,dat_series,bar_num,*func_auxargs):
     """Compare traced data to a normal distribution with a KS test.
 
     Returns output of a KS test:
@@ -229,7 +229,8 @@ def ksplot(func,alims,blims,t_series,dat_series,*func_auxargs):
     blims = slider limits for the paramter 'b' in func
     t_series = the time series corrisponding to dat_series
     dat_series = the data set which will be traced
-    func_auxargs = auxilary arguments for func.
+    bar_num = number of bars in the histogramed plot
+    func_auxargs = auxilary arguments for func
     """
     def makeplots(a,b):
         dat = func('price',t_series,dat_series,a,b,*func_auxargs)
@@ -240,15 +241,14 @@ def ksplot(func,alims,blims,t_series,dat_series,*func_auxargs):
         ax.set_xlim(min(t_series),max(t_series))
         ax.plot(t_series,dat)
         
-        bnum = 50
         dat_fds = np.array(get_fds(dat))
-        t_fds = np.array(get_fds(t_series))
-        dat_fds = dat_fds/t_fds
-        dat_cnt,dat_mkr = np.histogram(dat_fds,bnum)
-        norm_mkr = np.linspace(min(dat_mkr),max(dat_mkr),100)
+        dat_cnt,dat_mkr = np.histogram(dat_fds,bar_num)
+        norm_hist = np.histogram(dat_fds,bar_num)[0]
+        norm_mkr = np.linspace(min(dat_mkr),max(dat_mkr),bar_num)
         norm_cnt = normpdf(norm_mkr,0,np.std(dat_fds))
         norm_cnt = norm_cnt*max(dat_cnt)/max(norm_cnt)
-        ksstat,pval = ks_2samp(norm_cnt, dat_cnt)
+        norm_hist = np.histogram(norm_cnt,bar_num)[0]
+        ksstat,pval = ks_2samp(norm_hist, dat_cnt)
         print 'KS test using scaled fds of traced dat and a fit gaussian:'
         print 'Statistic value =',ksstat
         print 'Two sided p-value =',pval
@@ -258,7 +258,7 @@ def ksplot(func,alims,blims,t_series,dat_series,*func_auxargs):
         ax1.set_ylabel('count',fontsize=13)
         ax1.set_xlabel('difference',fontsize=13)
         
-        wdth = float(max(dat_mkr)-min(dat_mkr))/bnum
+        wdth = float(max(dat_mkr)-min(dat_mkr))/bar_num
         plt.bar(dat_mkr[:-1],dat_cnt,label='traced fds (scaled by dt)',width = wdth,align='center')
         plt.plot(norm_mkr,norm_cnt,label='fit gaussian',color='m')
         ax1.set_xlim(min(dat_mkr)-wdth,max(dat_mkr)+wdth)
