@@ -1,6 +1,6 @@
 import numpy as np
 from random import gauss
-from utility_funcs import get_fds
+import utility_funcs as ufuncs
 import matplotlib.pyplot as plt
 from matplotlib.mlab import normpdf
 from IPython.html.widgets import interact
@@ -241,7 +241,7 @@ def ksplot(func,mu_lims,sig_lims,t_series,p_series,bar_num,*func_auxargs):
         ax.set_xlim(min(t_series),max(t_series))
         ax.plot(t_series,dat)
         
-        dat_fds = np.array(get_fds(dat))
+        dat_fds = np.array(ufuncs.get_fds(dat))
         dat_cnt,dat_mkr = np.histogram(dat_fds,bar_num)
         norm_hist = np.histogram(dat_fds,bar_num)[0]
         norm_cnt = normpdf(dat_mkr,0,np.std(dat_fds))
@@ -299,3 +299,24 @@ def acomp_params(t_series,p_series):
     mu = dt_inv*np.mean(lnR)+sigma**2/2
 
     return mu,sigma
+
+def kscomp(mu_sigma,trc_func,t_series,p_series,num_bins,*faux_args):
+    '''Compare a trace's histogramed fds to a normal distribution
+
+    mu_sigma = a tuple of the parameters mu and sigma
+    trc_func = Use etrace or atrace to act on p_series and t_series
+    t_series = The time series corrisponding to p_series
+    p_series = The data set which will be traced
+    num_bins = The number of bins used to histogram p_series
+    faux_args = Auxilary arguments for trc_func'''
+
+    mu,sigma = mu_sigma
+    trc = trc_func('price',t_series,p_series,mu,sigma,*faux_args)
+    fds_trc = np.array(ufuncs.get_fds(trc))
+    cnt_trc,mkr_trc = np.histogram(fds_trc,num_bins)
+    mkr_trc=mkr_trc[1:]
+    std = np.sqrt(np.mean((t_series-t_series.shift(1))[1:].values))
+    norm_cnt = normpdf(mkr_trc,0,std)
+    norm_cnt = norm_cnt*max(cnt_trc)/max(norm_cnt)
+    
+    return ks_2samp(norm_cnt, cnt_trc),mkr_trc,norm_cnt,cnt_trc
