@@ -244,9 +244,9 @@ def ksplot(func,mu_lims,sig_lims,t_series,p_series,bar_num,*func_auxargs):
         dat_fds = np.array(ufuncs.get_fds(dat))
         dat_cnt,dat_mkr = np.histogram(dat_fds,bar_num)
         norm_hist = np.histogram(dat_fds,bar_num)[0]
-        norm_cnt = normpdf(dat_mkr,0,np.std(dat_fds))
-        norm_cnt = norm_cnt*max(dat_cnt)/max(norm_cnt)
-        ksstat,pval = ks_2samp(norm_cnt, dat_cnt)
+        cnt_norm = normpdf(dat_mkr,0,np.std(dat_fds))
+        cnt_norm = cnt_norm*max(dat_cnt)/max(cnt_norm)
+        ksstat,pval = ks_2samp(cnt_norm, dat_cnt)
         print 'KS test using scaled fds of traced dat and a fit gaussian:'
         print 'Statistic value =',ksstat
         print 'Two sided p-value =',pval
@@ -258,7 +258,7 @@ def ksplot(func,mu_lims,sig_lims,t_series,p_series,bar_num,*func_auxargs):
         
         wdth = float(max(dat_mkr)-min(dat_mkr))/bar_num
         plt.bar(dat_mkr[:-1],dat_cnt,label='traced fds (scaled by dt)',width = wdth,align='center')
-        plt.plot(dat_mkr,norm_cnt,label='fit gaussian',color='m')
+        plt.plot(dat_mkr,cnt_norm,label='fit gaussian',color='m')
         ax1.set_xlim(min(dat_mkr)-wdth,max(dat_mkr)+wdth)
         plt.legend(loc='best')
         plt.show()
@@ -266,7 +266,7 @@ def ksplot(func,mu_lims,sig_lims,t_series,p_series,bar_num,*func_auxargs):
     interact(makeplots,a=mu_lims,b=sig_lims)
 
 def ecomp_params(t_series,p_series):
-    '''Compute the expected parameters for the euler DE
+    '''Compute the expected parameters (mu, sigma) for the euler DE
 
     Notes:
     1) Calculations based on the assumption of small time steps
@@ -283,14 +283,14 @@ def ecomp_params(t_series,p_series):
     return mu,sigma
 
 def acomp_params(t_series,p_series):
-    '''Compute the expected parameters of the analytical solution
+    '''Compute the expected parameters (mu, sigma) of the analytical solution
 
     Notes:
     1) Calculations do not require small time steps
-    2) give time and data series as Pandas Series objects
+    2) Give time and data series as Pandas Series objects
 
-    t_series = the time series corrisponding to p_series
-    p_series = the data set which will be traced
+    t_series = The time series corrisponding to p_series
+    p_series = The data set which will be traced
     '''
     dt_inv = 1/np.mean((t_series-t_series.shift(1))[1:].values)
     prev_vals = p_series.shift(1)
@@ -307,8 +307,16 @@ def kscomp(mu_sigma,trc_func,t_series,p_series,num_bins,*faux_args):
     trc_func = Use etrace or atrace to act on p_series and t_series
     t_series = The time series corrisponding to p_series
     p_series = The data set which will be traced
-    num_bins = The number of bins used to histogram p_series
-    faux_args = Auxilary arguments for trc_func'''
+    num_bins = The number of bins used to histogram the fds
+    faux_args = Auxilary arguments for trc_func
+
+    Returns
+    -------
+    ks_2samp: KS static and a p-value in a tuple
+    mkr_trc: An array of bin positions for cnt_trc and cnt_norm
+    cnt_trc: An array of bin values for trace's histogramed fds
+    cnt_norm: An array of bin values for a scaled normal distribution
+    '''
 
     mu,sigma = mu_sigma
     trc = trc_func('price',t_series,p_series,mu,sigma,*faux_args)
@@ -316,7 +324,7 @@ def kscomp(mu_sigma,trc_func,t_series,p_series,num_bins,*faux_args):
     cnt_trc,mkr_trc = np.histogram(fds_trc,num_bins)
     mkr_trc=mkr_trc[1:]
     std = np.sqrt(np.mean((t_series-t_series.shift(1))[1:].values))
-    norm_cnt = normpdf(mkr_trc,0,std)
-    norm_cnt = norm_cnt*max(cnt_trc)/max(norm_cnt)
+    cnt_norm = normpdf(mkr_trc,0,std)
+    cnt_norm = cnt_norm*max(cnt_trc)/max(cnt_norm)
     
-    return ks_2samp(norm_cnt, cnt_trc),mkr_trc,norm_cnt,cnt_trc
+    return ks_2samp(cnt_norm, cnt_trc),mkr_trc,cnt_trc,cnt_norm
