@@ -64,8 +64,8 @@ def get_daily_data(symbol,date):
 def get_tseries(dfts):
     '''Get a list of times based on a series of Pandas TimeStamp objects
 
-    The resulting times are given in days'''
-    return [(ts-dfts[0]).total_seconds()*1.15741e-5 for ts in dfts]
+    The resulting times are given in years'''
+    return [(ts-dfts[0]).total_seconds()/3.15569e7 for ts in dfts]
 
 def calc_returns(df):
     close = df.close
