@@ -61,12 +61,6 @@ def get_daily_data(symbol,date):
         final_df.columns = ['open','high','low','close','volume','splits','earnings','dividends']
     return final_df,nodat
 
-def get_tseries(dfts):
-    '''Get a list of times based on a series of Pandas TimeStamp objects
-
-    The resulting times are given in years'''
-    return [(ts-dfts[0]).total_seconds()/3.15569e7 for ts in dfts]
-
 def calc_returns(df):
     close = df.close
     prev_close = df.close.shift(1)
