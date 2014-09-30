@@ -297,3 +297,5 @@ def acomp_params(t_series,p_series):
     lnR = np.log(p_series/prev_vals)
     sigma = dt_inv*np.var(lnR)
     mu = dt_inv*np.mean(lnR)+sigma**2/2
+
+    return mu,sigma
