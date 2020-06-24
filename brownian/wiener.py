@@ -38,7 +38,7 @@ def raise_res(T, W, c, mu=0, sigma=1):
         w_next = W[i+1]
         t_series.append(t)
         w_series.append(w_t)
-        for j in range(c-1):
+        for _ in range(c-1):
             t+=dt
             dW = (w_next-w_t)
             drawfrm_cum = np.sqrt(2)*np.sqrt(t_next-t)*sigma*erfc(random())

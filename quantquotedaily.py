@@ -9,8 +9,7 @@ base_dir = os.environ.get('QUANT_QUOTE_DAILY')
 def get_symbols():
     """Get a list of all available symbols."""
     files = glob.glob(os.path.join(base_dir,'*'))
-    syms = [os.path.splitext(os.path.split(f)[1])[0].split('_')[1] for f in files]
-    return syms
+    return [os.path.splitext(os.path.split(f)[1])[0].split('_')[1] for f in files]
 
 def get_file(symbol,date):
     """Get the absolute filename for a symbols data."""
@@ -51,14 +50,13 @@ def get_daily_data(symbol,date):
             crntdate += timedelta(days=1)
             stringdate = crntdate.strftime('%Y%m%d')
         final_df = pd.concat(all_dat)
-        final_df.columns = ['open','high','low','close','volume','splits','earnings','dividends']
     else:
         f = get_file(symbol,date)
         final_df = pd.read_csv(f, header=None,
                                parse_dates={'datetime':[0,1]},
                                date_parser=dateparse,
                                index_col=0)
-        final_df.columns = ['open','high','low','close','volume','splits','earnings','dividends']
+    final_df.columns = ['open','high','low','close','volume','splits','earnings','dividends']
     return final_df,nodat
 
 def calc_returns(df):

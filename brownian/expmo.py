@@ -37,7 +37,7 @@ def estep(n, dt, a, b, c, m=1, mu=0, sigma=1, w_init=0., p_init=1., chain=(0,1))
         t_series = np.arange(0,(n+0.1)*dt,dt)
         w_series = [w_init]
         p_series = [p_init]
-    for i in range(n):
+    for _ in range(n):
         dw = gauss(mu,np.sqrt(dt)*sigma)
         dp = (p_t-p_last)/p_last
         p_last = p_t
@@ -121,14 +121,26 @@ def etrace(series, x, y_init, dt, a, b, c, m=1, mu=0, sigma=1, y_last=None, chai
     
     (!) Note: it is suggested that all arguments be given as floats."""
 
-    if series == 'wiener':
+    if series == 'price':
+        if y_last is None:
+            if chain == True:
+                raise TypeError('must input a value for y_last')
+            else:
+                y_last = 1
+        w_t = y_init
+        p_series = [y_last] + x
+        w_series = [] if chain==True else [float(y_init)]
+        for i in range(2,len(p_series)):
+            dp0 = (p_series[i-1] - p_series[i-2])/p_series[i-2]
+            dp1 = (p_series[i] - p_series[i-1])
+            w_t+=(dp1/p_series[i-1]**(m) - a*dt - c*dp0*dt)/b
+            w_series.append(w_t)
+        return w_series
+    elif series == 'wiener':
         w_series = x
         p_t = y_init
         p_last = y_init
-        if chain==True:
-            p_series = []
-        else:
-            p_series = [float(y_init)]
+        p_series = [] if chain==True else [float(y_init)]
         for i in range(1,len(w_series)):
             dw = w_series[i]-w_series[i-1]
             dp = (p_t-p_last)/p_last
@@ -136,27 +148,8 @@ def etrace(series, x, y_init, dt, a, b, c, m=1, mu=0, sigma=1, y_last=None, chai
             #incrament p(t) and w(t), then append values
             p_t += (a*dt + c*dp*dt + b*dw)*p_t**(m)
             p_series.append(p_t)
-        
-        return p_series
 
-    elif series == 'price':
-        if y_last == None:
-            if chain == True:
-                raise TypeError('must input a value for y_last')
-            else:
-                y_last = 1
-        w_t = y_init
-        p_series = [y_last] + x
-        if chain==True:
-            w_series = []
-        else:
-            w_series = [float(y_init)]
-        for i in range(2,len(p_series)):
-            dp0 = (p_series[i-1] - p_series[i-2])/p_series[i-2]
-            dp1 = (p_series[i] - p_series[i-1])
-            w_t+=(dp1/p_series[i-1]**(m) - a*dt - c*dp0*dt)/b
-            w_series.append(w_t)
-        return w_series
+        return p_series
 
 def atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
     """Returns a price/wiener series by tracing over a wiener/price series.
@@ -185,18 +178,6 @@ def atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
     (!) Note: it is suggested that all arguments be given as floats.
     """
     
-    if series == 'wiener':
-        p_series = []
-        w_series = x
-        if chain==True:
-            i = 1
-        else:
-            i = 0
-        for t in [dt*j for j in range(i,len(w_series))]:
-            p_series.append(p_init*np.exp(((a-b**2/2./(1-c*dt))*t+b*w_series[i])/(1-c*dt)))
-            i+=1
-        return p_series
-
     if series == 'price':
         w_series = [0.]
         p_series = x
@@ -206,3 +187,11 @@ def atrace(series, x, dt, a, b, c, mu=0, sigma=1, p_init=1, chain=False):
             w_series.append((np.log(p_series[i]/p_init)*(1-c*dt)-(a-b**2/2./(1-c*dt))*t)/b)
             i+=1
         return w_series
+    elif series == 'wiener':
+        p_series = []
+        w_series = x
+        i = 1 if chain==True else 0
+        for t in [dt*j for j in range(i,len(w_series))]:
+            p_series.append(p_init*np.exp(((a-b**2/2./(1-c*dt))*t+b*w_series[i])/(1-c*dt)))
+            i+=1
+        return p_series

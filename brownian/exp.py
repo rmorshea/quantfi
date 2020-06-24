@@ -42,7 +42,7 @@ def estep(n, dt, mu, sigma, m=1, mnv=0, var=1, w_init=0, p_init=1, chain_length=
         t_series = np.arange(0,(n+0.1)*dt,dt)
         w_series = [w_init]
         p_series = [p_init]
-    for i in range(n):
+    for _ in range(n):
         dw = gauss(mnv,np.sqrt(dt)*var)
         # Incrament p(t) with dp as given by the DE.
         # Incrament w(t) with dw as given by the normal distribution
@@ -127,33 +127,26 @@ def etrace(stype, ts, x, mu, sigma, y_init, m=1, mnv=0, vari=1, chain=False):
     (!) Note: it is suggested that all arguments be given as floats.
     """
     
-    if stype == 'wiener':
-        p_t = y_init
-        w_series = x
-        if chain==True:
-            p_series = []
-        else:
-            p_series = [y_init]
-        for i in range(1,len(w_series)):
-            dt = ts[i]-ts[i-1]
-            dw = w_series[i]-w_series[i-1]
-            p_t += (mu*dt+sigma*dw)*p_t**(m)
-            p_series.append(p_t)
-        return p_series
-            
-    elif stype == 'price':
+    if stype == 'price':
         w_t = y_init
         p_series = x
-        if chain==True:
-            w_series = []
-        else:
-            w_series = [y_init]
+        w_series = [] if chain==True else [y_init]
         for i in range(1,len(p_series)):
             dt = ts[i]-ts[i-1]
             dP = (p_series[i] - p_series[i-1])/(p_series[i-1]**(m))
             w_t+=(dP-mu*dt)/sigma
             w_series.append(w_t)
         return w_series
+    elif stype == 'wiener':
+        p_t = y_init
+        w_series = x
+        p_series = [] if chain==True else [y_init]
+        for i in range(1,len(w_series)):
+            dt = ts[i]-ts[i-1]
+            dw = w_series[i]-w_series[i-1]
+            p_t += (mu*dt+sigma*dw)*p_t**(m)
+            p_series.append(p_t)
+        return p_series
     
 def atrace(stype, ts, x, mu, sigma, p_init=1, chain=False):
     """Returns a price/wiener series by tracing over a wiener/price series.
@@ -180,34 +173,26 @@ def atrace(stype, ts, x, mu, sigma, p_init=1, chain=False):
     """
     
     
-    if stype == 'wiener':
+    if stype == 'price':
+        p_init = x[0]
+        p_series = x
+        w_series = []
+        i = 1 if chain==True else 0
+        for t in ts:
+            alph = (mu-0.5*sigma**2)*t
+            w_series.append((np.log(float(p_series[i])/p_init)-alph)/sigma)
+            i+=1
+        return w_series
+    elif stype == 'wiener':
         p_series = []
         w_series = x
-        if chain==True:
-            i = 1
-        else:
-            i = 0
+        i = 1 if chain==True else 0
         for t in ts:
             alph = (mu-0.5*sigma**2)*t
             beta = sigma*w_series[i]
             p_series.append(p_init*np.exp(alph + beta))
             i+=1
         return p_series
-    
-    
-    if stype == 'price':
-        p_init = x[0]
-        p_series = x
-        w_series = []
-        if chain==True:
-            i = 1
-        else:
-            i = 0
-        for t in ts:
-            alph = (mu-0.5*sigma**2)*t
-            w_series.append((np.log(float(p_series[i])/p_init)-alph)/sigma)
-            i+=1
-        return w_series
 
 def ksplot(func,mu_lims,sig_lims,t_series,p_series,bar_num,*func_auxargs):
     """Compare traced data to a normal distribution with a KS test.

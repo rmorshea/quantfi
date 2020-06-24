@@ -3,7 +3,11 @@ def get_fds(w,lim=None):
     
     w = input data series
     lim = returned differences are between +/-lim.'''
-    return [w[i+1]-w[i] for i in range(len(w)-1) if lim==None or abs(w[i+1]-w[i])<lim]
+    return [
+        w[i + 1] - w[i]
+        for i in range(len(w) - 1)
+        if lim is None or abs(w[i + 1] - w[i]) < lim
+    ]
 
 def get_tseries(dfts):
     '''Get a list of times based on a series of Pandas TimeStamp objects
